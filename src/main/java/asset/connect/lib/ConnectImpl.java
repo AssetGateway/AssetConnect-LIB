@@ -38,7 +38,7 @@ public class ConnectImpl implements Connect {
 	private Map<Class<? extends Result>, Queue<FutureResultImpl>> pendingFutures = new HashMap<Class<? extends Result>, Queue<FutureResultImpl>>();
 
 	private boolean closed;
-	
+
 	public ConnectImpl(ExecutorService executorService, ConnectSettings connectSettings) {
 		this(executorService, connectSettings, "0.0.0.0");
 	}
@@ -67,7 +67,9 @@ public class ConnectImpl implements Connect {
 		try {
 			if(this.pendingFutures != null) {
 				for(Queue<FutureResultImpl> pendingFutures : this.pendingFutures.values()) {
-					pendingFutures.poll().cancel();
+					while(!pendingFutures.isEmpty()) {
+						pendingFutures.poll().cancel();
+					}
 				}
 			}
 			if(this.networkReader != null) {
@@ -100,10 +102,10 @@ public class ConnectImpl implements Connect {
 		if(!this.pendingFutures.containsKey(request.getResult())) {
 			this.pendingFutures.put(request.getResult(), new LinkedList<FutureResultImpl>());
 		}
-		
+
 		FutureResultImpl<T> futureResult = new FutureResultImpl<T>();
 		this.pendingFutures.get(request.getResult()).add(futureResult);
-		
+
 		RequestEncoder requestEncoder = ConnectRequestEncoderRegistry.INSTANCE.getByRequest(request.getClass());
 		try {
 			this.networkSocket.write(requestEncoder.getLabel() + " " + requestEncoder.encode(request));
@@ -146,7 +148,7 @@ public class ConnectImpl implements Connect {
 			}
 		});
 	}
-	
+
 	public void dispatchResult(final Result result) {
 		final FutureResultImpl<?> futureResult = this.pendingFutures.get(result.getClass()).poll();
 		this.executorService.execute(new Runnable() {
@@ -167,7 +169,7 @@ public class ConnectImpl implements Connect {
 	public ConnectSettings getSettings() {
 		return this.settings;
 	}
-	
+
 	@Deprecated
 	public ConnectSettings getConnectSettings() {
 		return this.settings;
