@@ -62,10 +62,13 @@ public class ConnectImpl implements Connect {
 		return false;
 	}
 
+	@SuppressWarnings("rawtypes")
 	public void disconnect() {
 		try {
 			if(this.pendingFutures != null) {
-				this.pendingFutures.clear();
+				for(Queue<FutureResultImpl> pendingFutures : this.pendingFutures.values()) {
+					pendingFutures.poll().cancel();
+				}
 			}
 			if(this.networkReader != null) {
 				this.networkReader.stop();
@@ -82,9 +85,7 @@ public class ConnectImpl implements Connect {
 	}
 
 	public void close() {
-		if(this.isConnected()) {
-			this.disconnect();
-		}
+		this.disconnect();
 		this.closed = true;
 	}
 
