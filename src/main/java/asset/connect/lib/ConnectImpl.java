@@ -68,7 +68,10 @@ public class ConnectImpl implements Connect {
 			if(this.pendingFutures != null) {
 				for(Queue<FutureResultImpl> pendingFutures : this.pendingFutures.values()) {
 					while(!pendingFutures.isEmpty()) {
-						pendingFutures.poll().cancel();
+						for (FutureResultImpl result : pendingFutures){
+							result.cancel();
+						}
+						pendingFutures.clear();
 					}
 				}
 			}
