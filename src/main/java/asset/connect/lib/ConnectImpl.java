@@ -2,12 +2,12 @@ package asset.connect.lib;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import asset.connect.api.Connect;
@@ -38,7 +38,6 @@ public class ConnectImpl implements Connect {
 	private Map<Class<? extends Result>, Queue<FutureResultImpl>> pendingFutures = new HashMap<Class<? extends Result>, Queue<FutureResultImpl>>();
 
 	private boolean closed;
-	private boolean disconnected;
 
 	public ConnectImpl(ExecutorService executorService, ConnectSettings connectSettings) {
 		this(executorService, connectSettings, "0.0.0.0");
@@ -56,7 +55,6 @@ public class ConnectImpl implements Connect {
 			this.networkSocket = new ConnectNetworkSocket(this.settings.getOutboundAddress(), this.inboundIp);
 			this.networkReader = new ConnectNetworkReader(this, this.networkSocket);
 			this.networkReader.start();
-			disconnected = false;
 			return true;
 		} catch(Exception exception) {
 			exception.printStackTrace();
@@ -66,15 +64,11 @@ public class ConnectImpl implements Connect {
 
 	@SuppressWarnings("rawtypes")
 	public void disconnect() {
-		disconnected = true;
 		try {
 			if(this.pendingFutures != null) {
 				for(Queue<FutureResultImpl> pendingFutures : this.pendingFutures.values()) {
-					while(pendingFutures != null && pendingFutures.isEmpty()) {
-						for (FutureResultImpl result : pendingFutures){
-							result.cancel();
-						}
-						pendingFutures.clear();
+					while(!pendingFutures.isEmpty()) {
+						pendingFutures.poll().cancel();
 					}
 				}
 			}
@@ -106,7 +100,7 @@ public class ConnectImpl implements Connect {
 			throw new RequestException("notconnected");
 		}
 		if(!this.pendingFutures.containsKey(request.getResult())) {
-			this.pendingFutures.put(request.getResult(), new LinkedList<FutureResultImpl>());
+			this.pendingFutures.put(request.getResult(), new LinkedBlockingQueue<FutureResultImpl>());
 		}
 
 		FutureResultImpl<T> futureResult = new FutureResultImpl<T>();
@@ -156,10 +150,6 @@ public class ConnectImpl implements Connect {
 	}
 
 	public void dispatchResult(final Result result) {
-		if (disconnected){
-			return;
-		}
-		
 		final FutureResultImpl<?> futureResult = this.pendingFutures.get(result.getClass()).poll();
 		this.executorService.execute(new Runnable() {
 			public void run() {
