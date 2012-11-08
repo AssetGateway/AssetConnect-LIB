@@ -59,7 +59,7 @@ public class ConnectNetworkReader implements Runnable {
 		} catch(InterruptedException exception) {
 			//ignore
 		} catch(Exception exception) {
-			exception.printStackTrace();
+			//exception.printStackTrace(); ignore stack traces
 		} finally {
 			this.connect.disconnect();
 		}

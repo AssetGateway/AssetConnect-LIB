@@ -49,17 +49,15 @@ public class ConnectImpl implements Connect {
 		this.inboundIp = inboundIp;
 	}
 
-	public boolean connect() {
+	public void connect() throws Exception {
 		this.disconnect();
 		try {
 			this.networkSocket = new ConnectNetworkSocket(this.settings.getOutboundAddress(), this.inboundIp);
 			this.networkReader = new ConnectNetworkReader(this, this.networkSocket);
 			this.networkReader.start();
-			return true;
 		} catch(Exception exception) {
-			exception.printStackTrace();
+			throw exception;
 		}
-		return false;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -79,7 +77,7 @@ public class ConnectImpl implements Connect {
 				this.networkSocket.close();
 			}
 		} catch(Exception exception) {
-			exception.printStackTrace();
+			//exception.printStackTrace(); ignore stack traces
 		} finally {
 			this.networkSocket = null;
 			this.networkReader = null;

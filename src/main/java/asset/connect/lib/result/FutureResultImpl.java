@@ -48,7 +48,7 @@ public class FutureResultImpl<T extends Result> implements FutureResult<T> {
 		if(this.result == null && !this.resultCancelled) {
 			this.wait(timeout);
 		}
-		return null;
+		return this.result;
 	}
 
 	public synchronized T awaitUninterruptibly() {
@@ -62,7 +62,7 @@ public class FutureResultImpl<T extends Result> implements FutureResult<T> {
 				}
 			} while(true);
 		}
-		return null;
+		return this.result;
 	}
 
 	public synchronized T awaitUninterruptibly(long timeout) {
@@ -77,7 +77,7 @@ public class FutureResultImpl<T extends Result> implements FutureResult<T> {
 				}
 			} while(true);
 		}
-		return null;
+		return this.result;
 	}
 
 	@SuppressWarnings("unchecked")
